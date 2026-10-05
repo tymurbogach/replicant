@@ -587,14 +587,18 @@ Panel {
   ]
 
   // Categories that actually have something in them, with their counts. An
-  // empty card is a card you have to read and then dismiss.
+  // empty card is a card you have to read and then dismiss. The plugins area
+  // has PluginsView listing all installed plugins even when no plugin has a
+  // separate settings file of its own.
   readonly property var categoryCards: {
     var cats = root.repoState.categories || []
+    var pluginList = root.repoState.plugins || []
     var out = []
     for (var i = 0; i < cats.length; i++) {
+      var isPlugins = cats[i].id === "plugins"
       var rows = root.rowsFor(cats[i].id)
       var total = R.rowsForList(root.everyRow, cats[i].id, "", "all").length
-      if (rows.length === 0) continue
+      if (rows.length === 0 && (!isPlugins || pluginList.length === 0 || root.filtering)) continue
       // Counted from the same states the badges render, not a separate word.
       var changed = 0, off = 0, incoming = 0
       for (var j = 0; j < rows.length; j++) {
@@ -602,10 +606,12 @@ Panel {
         if (rows[j].sync_state === "incoming") incoming++
         if (rows[j].synced === false) off++
       }
+      var displayCount = rows.length > 0 ? rows.length : (isPlugins ? pluginList.length : 0)
+      var displayTotal = total > 0 ? total : (isPlugins ? pluginList.length : 0)
       out.push({
         id: cats[i].id, icon: cats[i].icon, label: cats[i].label,
         description: cats[i].description, method: cats[i].method,
-        rows: rows, count: rows.length, total: total, changed: changed, off: off, incoming: incoming
+        rows: rows, count: displayCount, total: displayTotal, changed: changed, off: off, incoming: incoming
       })
     }
     return out

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.tymurbogach.replicant",
   "name": "Replicant",
-  "version": "0.38.3",
+  "version": "0.38.4",
   "author": "tymurbogach",
   "license": "MIT",
   "description": "The right way to manage, save and replicate your Omarchy setup across your machines — one private repo shared by a desktop and a laptop, with per-profile sync.",

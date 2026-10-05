@@ -40,5 +40,9 @@ Column {
       metaColor: !modelData.installed ? panel.warnColor : modelData.settings === "file" ? panel.fg : panel.dim
     }
   }
-  CardLabel { panel: pv.panel; text: "Their own settings files" }
+  CardLabel {
+    panel: pv.panel
+    text: "Their own settings files"
+    visible: pv.plugins.some(function(p) { return p.settings === "file" })
+  }
 }

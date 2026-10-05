@@ -41,6 +41,36 @@ find_category() {
   return 1
 }
 
+is_plugin_config_rel() {
+  local rel="$1" prefix
+  prefix="${rel%%/*}"
+  [[ -z "$prefix" || "$prefix" == "$rel" ]] && prefix="${rel%%.*}"
+  if [[ -z "${PLUGIN_PREFIXES_LOADED:-}" ]]; then
+    PLUGIN_PREFIXES_LOADED=1
+    declare -gA PLUGIN_PREFIXES=()
+    local mf pid short
+    for mf in "$HOME/.config/omarchy/plugins"/*/manifest.json; do
+      [[ -f "$mf" ]] || continue
+      pid=$(jq -r '.id // empty' "$mf" 2>/dev/null) || continue
+      [[ -n "$pid" ]] || continue
+      PLUGIN_PREFIXES["$pid"]=1
+      short="${pid##*.}"
+      PLUGIN_PREFIXES["$short"]=1
+      [[ "$short" == omarchy-* ]] && PLUGIN_PREFIXES["${short#omarchy-}"]=1
+    done
+    if [[ -d "${STATE_ROOT:-}" ]]; then
+      while IFS=$'\t' read -r pid _rest; do
+        [[ -n "$pid" && "$pid" != \#* ]] || continue
+        PLUGIN_PREFIXES["$pid"]=1
+        short="${pid##*.}"
+        PLUGIN_PREFIXES["$short"]=1
+        [[ "$short" == omarchy-* ]] && PLUGIN_PREFIXES["${short#omarchy-}"]=1
+      done < <(cat "$STATE_ROOT"/*/omarchy-plugins.txt 2>/dev/null)
+    fi
+  fi
+  [[ -n "${PLUGIN_PREFIXES[$prefix]:-}" ]]
+}
+
 # category_for_rel <repo-relative-id> — one place deciding where a tracked file
 # shows up. It used to live inline in build_configs_json, which meant the CLI
 # and the panel could disagree about what "appearance" meant.
@@ -60,7 +90,13 @@ category_for_rel() {
     etc/*|uwsm/*|systemd/*)                            echo system ;;
     mimeapps.list)                                     echo desktop ;;
     starship.toml|btop/*|lazygit/*|tmux/*|herdr/*)     echo terminal ;;
-    *)                                                 echo other ;;
+    *)
+      if is_plugin_config_rel "$1"; then
+        echo plugins
+      else
+        echo other
+      fi
+      ;;
   esac
 }
 

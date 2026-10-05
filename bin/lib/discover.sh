@@ -14,7 +14,7 @@ discover_plugin_entries() {
   local plugins_dir="$HOME/.config/omarchy/plugins"
   [[ -d "$plugins_dir" ]] || return 0
   local -a mfs=()
-  local mf pid pname short src
+  local mf pid pname short altShort cand src rel
   for mf in "$plugins_dir"/*/manifest.json; do [[ -f "$mf" ]] && mfs+=("$mf"); done
   (( ${#mfs[@]} )) || return 0
   # One jq for every manifest. This runs each time the core is loaded, which
@@ -23,9 +23,34 @@ discover_plugin_entries() {
     [[ -n "$pid" ]] || continue
     [[ "$pid" == "io.github.tymurbogach.replicant" ]] && continue
     short="${pid##*.}"
-    src="$HOME/.config/omarchy/$short.json"
-    [[ -f "$src" ]] || continue
-    printf '%s\t%s\t%s\n' "$src" "plugins/$short.json" "$pname"
+    altShort="${short#omarchy-}"
+    local -a cands=(
+      "$HOME/.config/omarchy/$short.json"
+      "$HOME/.config/$short/config.json"
+      "$HOME/.config/$short/settings.json"
+      "$HOME/.config/$short.json"
+      "$HOME/.config/$pid/config.json"
+      "$HOME/.config/$pid/settings.json"
+      "$HOME/.config/$pid.json"
+    )
+    if [[ "$short" == omarchy-* ]]; then
+      cands+=(
+        "$HOME/.config/$altShort/config.json"
+        "$HOME/.config/$altShort/settings.json"
+        "$HOME/.config/$altShort.json"
+      )
+    fi
+    for cand in "${cands[@]}"; do
+      if [[ -f "$cand" ]]; then
+        if [[ "$cand" == "$HOME/.config/omarchy/$short.json" ]]; then
+          rel="plugins/$short.json"
+        else
+          rel="${cand#"$HOME/.config/"}"
+        fi
+        printf '%s\t%s\t%s\n' "$cand" "$rel" "$pname"
+        break
+      fi
+    done
   done < <(jq -r '[.id // "", .name // .id // ""] | @tsv' "${mfs[@]}" 2>/dev/null)
 }
 

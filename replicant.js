@@ -565,14 +565,40 @@ function originLabel(origin) {
 // shell.json, which the Desktop & bar area saves. Some plugins have neither.
 function pluginRows(repoState) {
   var rows = ({})
-  var list = repoState.entries || []
-  for (var i = 0; i < list.length; i++) rows[list[i].id] = true
+  var list = repoState.entries || repoState.configs || []
+  for (var i = 0; i < list.length; i++) rows[list[i].id] = list[i]
   return (repoState.plugins || []).map(function(p) {
-    var fileId = "plugins/" + String(p.id).split(".").pop() + ".json"
-    var where = rows[fileId] ? "file" : p.in_bar === true ? "bar" : "none"
+    var short = String(p.id).split(".").pop()
+    var altShort = short.replace(/^omarchy-/, "")
+    var candidates = [
+      "plugins/" + short + ".json",
+      short + "/config.json",
+      short + "/settings.json",
+      short + ".json",
+      altShort + "/config.json",
+      altShort + "/settings.json",
+      altShort + ".json",
+      String(p.id) + "/config.json",
+      String(p.id) + "/settings.json",
+      String(p.id) + ".json"
+    ]
+    var matchedId = ""
+    for (var j = 0; j < candidates.length; j++) {
+      if (rows[candidates[j]]) { matchedId = candidates[j]; break }
+    }
+    if (!matchedId) {
+      for (var k = 0; k < list.length; k++) {
+        var entryId = list[k].id || ""
+        if (list[k].category === "plugins" && (entryId.indexOf(short + "/") === 0 || entryId.indexOf(altShort + "/") === 0 || entryId.indexOf(String(p.id) + "/") === 0)) {
+          matchedId = entryId
+          break
+        }
+      }
+    }
+    var where = matchedId !== "" ? "file" : p.in_bar === true ? "bar" : "none"
     return { id: p.id, name: p.name || p.id, version: p.version || "", installed: p.installed === true,
              origin: p.origin || "", method: p.method || "", recorded: p.recorded === true,
-             settings: where, settingsId: where === "file" ? fileId : "" }
+             settings: where, settingsId: where === "file" ? matchedId : "" }
   })
 }
 
