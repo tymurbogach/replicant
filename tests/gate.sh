@@ -110,6 +110,14 @@ gate_g0() {
   else
     bad "bench still references hardcoded user state"
   fi
+  # run-all.sh runs under `set -u`: a skip counter called without a message
+  # (the SKIPPED line itself was already printed) must not die on $1. This
+  # crashed the CI suites job after G7 in 2026-10-22 (run 39853468945).
+  if grep -q 'SKIPPED: ${1:-}' "$HERE/run-all.sh"; then
+    ok "run-all skip counter tolerates a missing message"
+  else
+    bad "run-all skip counter dies on a missing message under set -u"
+  fi
 
   section "G0 command coverage manifest"
   [[ -f "$HERE/coverage.json" ]] && ok "coverage.json exists" || bad "coverage.json is missing"

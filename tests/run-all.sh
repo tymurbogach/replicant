@@ -18,7 +18,7 @@ section() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 passed=0; failed=0; skipped=0
 record_pass() { passed=$((passed+1)); }
 record_fail() { failed=$((failed+1)); }
-record_skip() { skipped=$((skipped+1)); echo "SKIPPED: $1"; }
+record_skip() { skipped=$((skipped+1)); echo "SKIPPED: ${1:-}"; }
 run_step() {
   local name="$1"; shift
   local out rc=0
